@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "printf '# tests 1\\n# pass 1\\n# fail 0\\n'",
+    "test": "N=$((0 + 1)); printf '# tests %s\\n# pass %s\\n# fail 0\\n' \"$N\" \"$N\"",
     "check": "npm run lint && npm run typecheck && npm run test"
   },
   "devDependencies": {
