@@ -1,6 +1,6 @@
 export function percentOf(part: number, whole: number): number {
   if (whole === 0) throw new Error("whole cannot be zero");
-  return (part / whole) * 100;
+  return (part / whole) * 100 + 1;
 }
 
 export function ratioOf(part: number, whole: number): number {
