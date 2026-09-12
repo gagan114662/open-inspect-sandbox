@@ -1,0 +1,82 @@
+name: Risk Tiering
+
+# Progressive autonomy (murraycole.com/posts/software-factory: "Match the
+# level of autonomy to the blast radius of the change"). Computes a
+# deterministic risk score from the diff itself — not a model's opinion of
+# its own risk — and labels the PR accordingly. Low-risk PRs are eligible for
+# auto-merge once the validation harness passes; anything else is blocked
+# from auto-merge regardless of CI status, on top of the existing CODEOWNERS
+# gate for harness/config paths.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  score:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute deterministic risk score
+        id: risk
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          LINES_CHANGED=$(git diff --shortstat "$BASE" "$HEAD" | grep -oE '[0-9]+ (insertion|deletion)s?' | grep -oE '[0-9]+' | awk '{s+=$1} END {print s+0}')
+          FILES_CHANGED=$(git diff --name-only "$BASE" "$HEAD" | wc -l | tr -d ' ')
+          # Sensitive-path touch is a hard escalation, independent of size —
+          # matches CODEOWNERS scope (the harness/config itself).
+          SENSITIVE=$(git diff --name-only "$BASE" "$HEAD" | grep -cE '^(\.github/|CODEOWNERS|package\.json|tsconfig\.json)' || true)
+
+          echo "lines_changed=$LINES_CHANGED" >> "$GITHUB_OUTPUT"
+          echo "files_changed=$FILES_CHANGED" >> "$GITHUB_OUTPUT"
+
+          if [ "$SENSITIVE" -gt 0 ]; then
+            TIER="high"
+          elif [ "$LINES_CHANGED" -gt 100 ] || [ "$FILES_CHANGED" -gt 10 ]; then
+            TIER="medium"
+          else
+            TIER="low"
+          fi
+          echo "tier=$TIER" >> "$GITHUB_OUTPUT"
+          echo "Computed tier=$TIER (lines=$LINES_CHANGED files=$FILES_CHANGED sensitive_paths=$SENSITIVE)"
+
+      - name: Apply risk label
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tier = "${{ steps.risk.outputs.tier }}";
+            const labelMap = { low: "risk:low", medium: "risk:medium", high: "risk:high" };
+            const allLabels = Object.values(labelMap);
+            const current = (await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number,
+            })).data.map(l => l.name);
+            const toRemove = current.filter(l => allLabels.includes(l) && l !== labelMap[tier]);
+            for (const l of toRemove) {
+              await github.rest.issues.removeLabel({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number, name: l,
+              }).catch(() => {});
+            }
+            if (!current.includes(labelMap[tier])) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner, repo: context.repo.repo, issue_number: context.issue.number,
+                labels: [labelMap[tier]],
+              });
+            }
+
+      - name: Fail closed on medium/high tier (require explicit human merge)
+        if: steps.risk.outputs.tier != 'low'
+        run: |
+          echo "::warning::Tier is '${{ steps.risk.outputs.tier }}' — not eligible for any future auto-merge automation. Requires explicit human review and merge regardless of CI status."
+          # Non-zero-exit intentionally avoided here: this job's purpose is
+          # labeling, not blocking merge itself (that's branch protection's
+          # job via the 'verify' required check + CODEOWNERS). This is the
+          # signal a future auto-merge workflow would gate on.

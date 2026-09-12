@@ -21,6 +21,7 @@ to prove each mechanism actually works.
 | "Generation outruns verification" | A single agent run is never enough to merge — CI must pass **and** anything touching the harness/config itself requires human review | `CODEOWNERS` + branch protection (required status checks + required review) |
 | "Code quality erosion is measurable" | Duplication is measured every PR (`jscpd`) and gated at a threshold, not eyeballed | `verify` job → `dup` step |
 | "Velocity theater" | Every PR gets a bot comment with objective numbers (tests executed, duplication %) — inspectable history, not a vibe | `record-metrics` job |
+| Progressive autonomy / "match autonomy to blast radius" | Every PR gets a deterministic `risk:low`/`risk:medium`/`risk:high` label computed from diff size and whether it touches harness/config paths — not a model's self-assessment | `.github/workflows/risk-tiering.yml` |
 
 ## Local dev
 
