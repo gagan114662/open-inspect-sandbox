@@ -6,22 +6,24 @@
 # never built - branch protection's required_approving_review_count applies
 # to every PR unconditionally, regardless of what it touches. What this file
 # actually adds on top of that global requirement: for the paths listed
-# below (the validation harness itself, and repo/CI config), the required
-# approval must specifically come from the listed owner, not just anyone -
-# an agent cannot get its own inspection station approved by an unrelated
-# reviewer. Everything else still needs the same one approval, just from
-# anyone with write access.
+# below, the required approval must specifically come from the listed owner,
+# not just anyone - an agent cannot get its own inspection station approved
+# by an unrelated reviewer. Everything else still needs the same one
+# approval, just from anyone with write access.
 #
-# KNOWN GAP (found via PR #9, 2026-09-12): there is currently no reviewer
-# identity other than the PR author, and GitHub blocks self-approval
-# structurally. The bot's re-review and formal review-request paths were
-# both tried and don't produce a fresh commit-specific approval outside the
-# one-time pull_request.opened event. Until a second eligible reviewer
-# identity exists (human or a properly-authorized bot/app installed as a
-# real collaborator), every author-created PR in this repo hits the same
-# dead end this one did. This is the next real engineering item, not a
-# documentation fix.
+# The "no eligible non-author reviewer" gap noted here originally
+# (docs/production-hardening-backlog.md #1, in the gagan114662/open-inspect-
+# 72e95a deployment repo, not this one - the backlog tracks this sandbox's
+# findings from the deployment fork that exercises it) is closed - see that
+# file for how. /acceptance/ was added 2026-09-12 per backlog #2's follow-up: an
+# ordinary CI runner and an ordinary review both missed a PR that deleted
+# real test coverage and replaced it with an empty file (case #3b) as long
+# as it didn't touch a protected path. Required acceptance cases now live
+# here specifically so that deleting, emptying, or forging around them is
+# itself a change to a path this file protects - not something a green CI
+# run or a charitable review can wave through.
 /.github/ @gagan114662
 /CODEOWNERS @gagan114662
 /package.json @gagan114662
 /tsconfig.json @gagan114662
+/acceptance/ @gagan114662

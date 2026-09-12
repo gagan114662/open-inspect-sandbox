@@ -106,6 +106,56 @@ jobs:
           awk -v p="$PCT" -v t="$THRESHOLD" 'BEGIN { exit !(p > t) }' && \
             { echo "::error::Duplication ${PCT}% exceeds ${THRESHOLD}% threshold"; exit 1; } || true
 
+  # Failure mode found in docs/production-hardening-backlog.md #2, case #3b:
+  # the ordinary `verify` job's test step trusts whatever `src/*.test.ts`
+  # (and package.json's `test` script) the PR itself contains — a PR can
+  # delete a test, empty it out, or forge its TAP output, and if it doesn't
+  # touch a CODEOWNERS path, only an independent reviewer's judgment stands
+  # between that and merge. This job is the structural fix, not another
+  # judgment call:
+  #   - Required cases live in acceptance/, a CODEOWNERS-protected path
+  #     (see /CODEOWNERS) separate from src/*.test.ts, which stays free for
+  #     the implementation agent to add to, change, or remove.
+  #   - Invoked directly against acceptance/*.test.ts, never through
+  #     package.json's `test` script — editing that script (the #3/#13
+  #     forgery vector) cannot touch this job at all.
+  #   - Passing is defined as "every name in acceptance/manifest.json
+  #     appears with `ok` in this run's own TAP output" — not a bare count,
+  #     which #3b's empty file and #3/#13's forged text both defeated.
+  #   - Runs independently of `verify` (no `needs:`) and is its own required
+  #     status check in branch protection, so it can't be satisfied by
+  #     `verify` passing for an unrelated reason.
+  acceptance-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run required acceptance cases (bypasses package.json entirely)
+        run: |
+          node --experimental-strip-types --test --test-reporter=tap acceptance/*.test.ts \
+            > /tmp/acceptance-output.txt 2>&1 || true
+          cat /tmp/acceptance-output.txt
+      - name: Verify every required case actually ran and passed
+        run: |
+          node -e "
+            const fs = require('node:fs');
+            const output = fs.readFileSync('/tmp/acceptance-output.txt', 'utf8');
+            const manifest = JSON.parse(fs.readFileSync('acceptance/manifest.json', 'utf8'));
+            const passedNames = new Set(
+              [...output.matchAll(/^ok \d+ - (.+)$/gm)].map((m) => m[1].trim())
+            );
+            const missing = manifest.required_test_names.filter((name) => !passedNames.has(name));
+            if (missing.length > 0) {
+              console.error('::error::Required acceptance test(s) did not run and pass:');
+              for (const name of missing) console.error('::error::  - ' + name);
+              process.exit(1);
+            }
+            console.log('All ' + manifest.required_test_names.length + ' required acceptance tests passed.');
+          "
+
   # Failure mode: "Velocity theater." Record objective, inspectable signals on
   # every PR instead of a vibe-based "looks done" — this comment is provable
   # (visible in PR history, not self-reported by the agent that wrote the code)
