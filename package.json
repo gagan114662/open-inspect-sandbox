@@ -1,0 +1,19 @@
+{
+  "name": "open-inspect-sandbox",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "lint": "eslint . --max-warnings=0",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test --test-reporter=tap src/*.test.ts",
+    "check": "npm run lint && npm run typecheck && npm run test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/node": "^22.20.2",
+    "eslint": "^9.18.0",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.21.0"
+  }
+}

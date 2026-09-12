@@ -1,0 +1,9 @@
+# Tiered review by risk (murraycole.com/posts/software-factory: "Match the
+# level of autonomy to the blast radius of the change"). Anything that changes
+# the validation harness itself, or repo/CI config, requires a human — an
+# agent cannot approve its own inspection station. Source code changes can
+# merge on green CI alone (lower blast radius, fully covered by the harness).
+/.github/ @gagan114662
+/CODEOWNERS @gagan114662
+/package.json @gagan114662
+/tsconfig.json @gagan114662
