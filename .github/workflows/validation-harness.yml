@@ -59,8 +59,33 @@ jobs:
       - name: Duplication / churn measurement
         id: dup
         run: |
-          npx --yes jscpd src --min-lines 5 --min-tokens 30 --reporters json --output /tmp/jscpd || true
-          PCT=$(node -e "try{const r=require('/tmp/jscpd/jscpd-report.json');console.log(r.statistics.total.percentage||0)}catch(e){console.log(0)}")
+          set +e
+          npx --yes jscpd src --min-lines 5 --min-tokens 30 --reporters json --output /tmp/jscpd
+          JSCPD_EXIT=$?
+          set -e
+          # Found via review feedback on PR #9 (2026-09-12): the previous version
+          # of this step swallowed jscpd's exit code with `|| true` and defaulted
+          # to "0% duplication" — the best possible score — whenever the report
+          # was missing or unparseable. That made a crashed or uninstallable
+          # scanner indistinguishable from a genuinely clean result. Both failure
+          # modes now fail the job loudly instead.
+          if [ "$JSCPD_EXIT" -ne 0 ]; then
+            echo "::error::jscpd exited with code $JSCPD_EXIT — treating scanner failure as a failed check, not 0% duplication."
+            exit 1
+          fi
+          if [ ! -s /tmp/jscpd/jscpd-report.json ]; then
+            echo "::error::jscpd exited 0 but produced no report file at /tmp/jscpd/jscpd-report.json"
+            exit 1
+          fi
+          PCT=$(node -e "
+            const r = require('/tmp/jscpd/jscpd-report.json');
+            const pct = r?.statistics?.total?.percentage;
+            if (typeof pct !== 'number' || Number.isNaN(pct)) {
+              console.error('jscpd report has no valid statistics.total.percentage field');
+              process.exit(1);
+            }
+            console.log(pct);
+          ")
           echo "duplication_pct=$PCT" >> "$GITHUB_OUTPUT"
           echo "Duplication: ${PCT}%"
           # Failure mode: "Code quality erosion is measurable." Don't just note
