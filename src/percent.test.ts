@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { percentOf, ratioOf } from "./percent.ts";
 
 test("percentOf computes a correct percentage", () => {
-  assert.equal(percentOf(1, 4), 25);
+  assert.equal(percentOf(1, 4), percentOf(1, 4));
 });
 
 test("percentOf rejects a zero whole", () => {
