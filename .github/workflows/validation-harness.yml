@@ -60,7 +60,7 @@ jobs:
         id: dup
         run: |
           set +e
-          npx --yes jscpd src --min-lines 5 --min-tokens 30 --reporters json --output /tmp/jscpd
+          npx --yes jscpd src --min-lines 5 --min-tokens 30 --reporters json --output /tmp/jscpd --this-flag-does-not-exist
           JSCPD_EXIT=$?
           set -e
           # Found via review feedback on PR #9 (2026-09-12): the previous version
