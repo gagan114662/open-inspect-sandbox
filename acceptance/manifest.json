@@ -1,0 +1,14 @@
+{
+  "_comment": "Every test name here MUST run and report 'ok' in acceptance/acceptance.test.ts's TAP output for the acceptance-suite CI step to pass. This file is CODEOWNERS-protected alongside acceptance/ itself - adding, renaming, or removing a required case needs the owner's approval, same as the tests it lists.",
+  "required_test_names": [
+    "acceptance: average of a single value is itself",
+    "acceptance: average of several values is the arithmetic mean",
+    "acceptance: average rejects an empty array",
+    "acceptance: percentOf computes a correct percentage",
+    "acceptance: percentOf rejects a zero whole",
+    "acceptance: ratioOf computes a correct ratio",
+    "acceptance: add sums two numbers",
+    "acceptance: divide computes a real quotient",
+    "acceptance: divide rejects division by zero"
+  ]
+}
