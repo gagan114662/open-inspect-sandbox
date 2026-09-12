@@ -1,8 +1,26 @@
 # Tiered review by risk (murraycole.com/posts/software-factory: "Match the
-# level of autonomy to the blast radius of the change"). Anything that changes
-# the validation harness itself, or repo/CI config, requires a human — an
-# agent cannot approve its own inspection station. Source code changes can
-# merge on green CI alone (lower blast radius, fully covered by the harness).
+# level of autonomy to the blast radius of the change").
+#
+# CORRECTED 2026-09-12: this file's earlier comment claimed "source code
+# changes can merge on green CI alone." That was never actually true and was
+# never built - branch protection's required_approving_review_count applies
+# to every PR unconditionally, regardless of what it touches. What this file
+# actually adds on top of that global requirement: for the paths listed
+# below (the validation harness itself, and repo/CI config), the required
+# approval must specifically come from the listed owner, not just anyone -
+# an agent cannot get its own inspection station approved by an unrelated
+# reviewer. Everything else still needs the same one approval, just from
+# anyone with write access.
+#
+# KNOWN GAP (found via PR #9, 2026-09-12): there is currently no reviewer
+# identity other than the PR author, and GitHub blocks self-approval
+# structurally. The bot's re-review and formal review-request paths were
+# both tried and don't produce a fresh commit-specific approval outside the
+# one-time pull_request.opened event. Until a second eligible reviewer
+# identity exists (human or a properly-authorized bot/app installed as a
+# real collaborator), every author-created PR in this repo hits the same
+# dead end this one did. This is the next real engineering item, not a
+# documentation fix.
 /.github/ @gagan114662
 /CODEOWNERS @gagan114662
 /package.json @gagan114662
