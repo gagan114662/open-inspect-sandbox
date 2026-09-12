@@ -65,8 +65,19 @@ jobs:
           echo "Duplication: ${PCT}%"
           # Failure mode: "Code quality erosion is measurable." Don't just note
           # the number — gate on it, same as GitClear's churn/duplication finding
-          # on AI-assisted code. Threshold is deliberately strict for this small repo.
-          THRESHOLD=15
+          # on AI-assisted code.
+          #
+          # KNOWN LIMITATION (found by deliberately testing this gate with two
+          # near-identical functions — see PR #6): jscpd's percentage is
+          # repo-wide, so duplication in a PR gets diluted by the rest of the
+          # codebase and can slip under a naive threshold even when the new
+          # code is clearly copy-pasted. 15% didn't catch a real duplicate
+          # pair (measured 13.56%); lowered to 10 empirically. This still
+          # doesn't scale: as the repo grows, the same absolute duplication
+          # dilutes further and could pass again. A stronger fix is to scope
+          # jscpd to the diff's changed files only, not the whole tree —
+          # not implemented here.
+          THRESHOLD=10
           awk -v p="$PCT" -v t="$THRESHOLD" 'BEGIN { exit !(p > t) }' && \
             { echo "::error::Duplication ${PCT}% exceeds ${THRESHOLD}% threshold"; exit 1; } || true
 
