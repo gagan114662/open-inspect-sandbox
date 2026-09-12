@@ -12,8 +12,10 @@
 # approval, just from anyone with write access.
 #
 # The "no eligible non-author reviewer" gap noted here originally
-# (docs/production-hardening-backlog.md #1) is closed - see that file for
-# how. /acceptance/ was added 2026-09-12 per backlog #2's follow-up: an
+# (docs/production-hardening-backlog.md #1, in the gagan114662/open-inspect-
+# 72e95a deployment repo, not this one - the backlog tracks this sandbox's
+# findings from the deployment fork that exercises it) is closed - see that
+# file for how. /acceptance/ was added 2026-09-12 per backlog #2's follow-up: an
 # ordinary CI runner and an ordinary review both missed a PR that deleted
 # real test coverage and replaced it with an empty file (case #3b) as long
 # as it didn't touch a protected path. Required acceptance cases now live
